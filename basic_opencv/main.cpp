@@ -19,6 +19,7 @@ std::vector<Point> getNeighborsCoordinatesPoint(Point current_coord);
 std::vector<Point> getEndPointsMat(Mat *im);
 std::vector<int> compare2vectorsOfPoint(vector<Point> v1, vector<Point> v2);
 std::vector<int> compare2vectorsOfInt(vector<int> v1, vector<int> v2);
+std::vector<Point> getJunctions(Mat *im);
 
 int main(int argc, char* argv[])
 {
@@ -58,7 +59,13 @@ int main(int argc, char* argv[])
 	std::vector<Point> t = getEndPointsMat(&image);
 	for (std::vector<Point>::size_type i = 0; i != t.size(); i++)
     {
-		circle(image, t[i],2,Scalar( 255, 0, 255 ), 1, 8);
+		//circle(image, t[i],2,Scalar( 255, 0, 255 ), 1, 8);
+		//cout << "(" << t[i].x << "," << t[i].y << ")" << endl;
+	}
+	std::vector<Point> junc = getJunctions(&image);
+	for (std::vector<Point>::size_type i = 0; i != junc.size(); i++)
+    {
+		circle(image, junc[i],2,Scalar( 255, 0, 255 ), 1, 8);
 		//cout << "(" << t[i].x << "," << t[i].y << ")" << endl;
 	}
 	imshow("Image", image);
@@ -77,23 +84,9 @@ std::vector<Point> getEndPointsMat(Mat *im)
     {
 		Point current_coord = Point(it->x, it->y);
 		vector<Point> neighbors = getNeighborsCoordinatesPoint(current_coord);
-		//cout << "(" << current_coord.x << "," << current_coord.y << ")  [";
-		for (std::vector<int>::size_type k = 0; k != neighbors.size(); k++)
-		{
-			//cout << neighbors[k].x << "," << neighbors[k].y << " ";
-		}
-		//cout << "] ";
 		vector<int> pos = compare2vectorsOfPoint(neighbors, skeleton_coordinates);
-		for (std::vector<int>::size_type l = 0; l != pos.size(); l++)
-		{
-			//cout << pos[l] << ",";
-		}
-		cout << endl;
-		//cout << "Pos = " << pos[1] << endl;
-		
 		if (pos.size() == 1)
 		{
-			//cout << "zero" << endl;
 			endpoints.push_back(current_coord);
 		}
 		else {
@@ -194,4 +187,50 @@ std::vector<int> compare2vectorsOfInt(vector<int> v1, vector<int> v2)
 	return position;
 }
 
+std::vector<Point> getJunctions(Mat *im)
+{
+	std::vector<Point> junctions;
+	int p1;
 
+
+	// For each pixel in our image...
+	for (int i = 1; i < im->rows-1; i++) {
+		for (int j = 1; j < im->cols-1; j++) {
+			
+
+			// See what the pixel is at this location
+			p1 = im->at<uchar>(i,j);
+
+			// If not a skeleton point, skip
+			if (p1 == 0) {				
+				continue;
+			}
+			
+			uchar p2 = im->at<uchar>(i-1, j);
+			uchar p3 = im->at<uchar>(i-1, j+1);
+			uchar p4 = im->at<uchar>(i, j+1);
+			uchar p5 = im->at<uchar>(i+1, j+1);
+			uchar p6 = im->at<uchar>(i+1, j);
+			uchar p7 = im->at<uchar>(i+1, j-1);
+			uchar p8 = im->at<uchar>(i, j-1);
+			uchar p9 = im->at<uchar>(i-1, j-1);
+
+			int same = (p9==p1);
+                same+=(p8==p1);
+                same+=(p7==p1);
+                same+=(p6==p1);
+                same+=(p5==p1);
+                same+=(p4==p1);
+                same+=(p3==p1);
+                same+=(p2==p1);
+			//cout << "Same:" << same << endl;
+             if (same==2)
+             {
+				 junctions.push_back(Point(i,j));
+			 }
+			
+		}
+	}
+	
+	return junctions;
+}
