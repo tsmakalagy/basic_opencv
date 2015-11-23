@@ -19,6 +19,7 @@ std::vector<Point> getNeighborsCoordinatesPoint(Point current_coord);
 std::vector<Point> getEndPointsMat(Mat *im);
 std::vector<int> compare2vectorsOfPoint(vector<Point> v1, vector<Point> v2);
 std::vector<int> compare2vectorsOfInt(vector<int> v1, vector<int> v2);
+std::vector<Point> getJunctions(Mat *im);
 
 int main(int argc, char* argv[])
 {
@@ -42,7 +43,7 @@ int main(int argc, char* argv[])
 		cv::Mat binaryMat(grayscaleMat.size(), grayscaleMat.type());
 
 		//Apply thresholding
-		cv::threshold(grayscaleMat, image, 100, 255, cv::THRESH_BINARY);
+		cv::threshold(grayscaleMat, image, 155, 255, cv::THRESH_BINARY);
 	} else {
 		line( image, Point( 15, 20 ), Point( 70, 20), Scalar( 110, 220, 0 ),  1, 8 );
 	}
@@ -58,7 +59,13 @@ int main(int argc, char* argv[])
 	std::vector<Point> t = getEndPointsMat(&image);
 	for (std::vector<Point>::size_type i = 0; i != t.size(); i++)
     {
-		circle(image, t[i],2,Scalar( 255, 0, 255 ), 1, 8);
+		//circle(image, t[i],1,Scalar( 255, 0, 255 ), 1, 8);
+		//cout << "(" << t[i].x << "," << t[i].y << ")" << endl;
+	}
+	std::vector<Point> junc = getJunctions(&image);
+	for (std::vector<Point>::size_type i = 0; i != junc.size(); i++)
+    {
+		circle(image, junc[i],1,Scalar( 255, 0, 255 ), 1, 8);
 		//cout << "(" << t[i].x << "," << t[i].y << ")" << endl;
 	}
 	imshow("Image", image);
@@ -77,26 +84,15 @@ std::vector<Point> getEndPointsMat(Mat *im)
     {
 		Point current_coord = Point(it->x, it->y);
 		vector<Point> neighbors = getNeighborsCoordinatesPoint(current_coord);
-		//cout << "(" << current_coord.x << "," << current_coord.y << ")  [";
-		for (std::vector<int>::size_type k = 0; k != neighbors.size(); k++)
-		{
-			//cout << neighbors[k].x << "," << neighbors[k].y << " ";
-		}
-		//cout << "] ";
+		
 		vector<int> pos = compare2vectorsOfPoint(neighbors, skeleton_coordinates);
-		for (std::vector<int>::size_type l = 0; l != pos.size(); l++)
-		{
-			//cout << pos[l] << ",";
-		}
-		cout << endl;
-		//cout << "Pos = " << pos[1] << endl;
 		
 		if (pos.size() == 1)
 		{
-			//cout << "zero" << endl;
 			endpoints.push_back(current_coord);
 		}
-		else {
+		else if (pos.size() == 3) {
+			//endpoints.push_back(current_coord);
 			/*bool present = false;
 			array<int, 3> v_init = {4,5,6};
 			// Test all the pixels around this current pixel
@@ -194,4 +190,50 @@ std::vector<int> compare2vectorsOfInt(vector<int> v1, vector<int> v2)
 	return position;
 }
 
+std::vector<Point> getJunctions(Mat *img)
+{
+	std::vector<Point> junctions;
+	int pix, count;
 
+
+	// For each pixel in our image...
+	for (int i = 1; i < img->rows-1; i++) {
+		for (int j = 1; j < img->cols-1; j++) {
+			
+
+			// See what the pixel is at this location
+			pix = img->at<uchar>(i,j);
+
+			// If not a skeleton point, skip
+			if (pix == 255) {				
+				//continue;
+			
+			uchar p1 = img->at<uchar>(i, j);
+			uchar p2 = img->at<uchar>(i-1, j);
+			uchar p3 = img->at<uchar>(i-1, j+1);
+			uchar p4 = img->at<uchar>(i, j+1);
+			uchar p5 = img->at<uchar>(i+1, j+1);
+			uchar p6 = img->at<uchar>(i+1, j);
+			uchar p7 = img->at<uchar>(i+1, j-1);
+			uchar p8 = img->at<uchar>(i, j-1);
+			uchar p9 = img->at<uchar>(i-1, j-1);
+		   
+			int same=(p9==p1);
+				same+=(p8==p1);
+				same+=(p7==p1);
+				same+=(p6==p1);
+				same+=(p5==p1);
+				same+=(p4==p1);
+				same+=(p3==p1);
+				same+=(p2==p1);
+			if (same>=4)
+			{
+				junctions.push_back(Point(j,i));
+				//circle(*img,Point(j,i),2,Scalar( 255, 0, 0 ),1,8);
+				
+			}
+			}
+		}
+	}
+	return junctions;
+}
